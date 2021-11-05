@@ -30,18 +30,17 @@
                 ref="form"
                 id="ajout"
                 v-model="valid"
-                lazy-validation
-                @submit.prevent="ajouterRestaurant"
+                v-on:submit="ajouterRestaurant"
               >
                 <v-text-field
-                  v-model="form.name"
+                  v-model="name"
                   :rules="fieldRules"
                   label="Nom du restaurant"
                   required
                 ></v-text-field>
 
                 <v-text-field
-                  v-model="form.cuisine"
+                  v-model="cuisine"
                   :rules="fieldRules"
                   label="Cuisine"
                   required
@@ -82,17 +81,21 @@
     <v-text-field
       color="rgb(157, 220, 224)"
       class="search"
-      v-model="nomRestaurantRecherche"
+      v-model="recherche"
       append-icon="mdi-magnify"
       label="Rechercher restaurant"
-      @input="chercherRestaurant()"
+      @input="chercherRestaurant"
       single-line
       hide-details
     ></v-text-field>
 
+    <h3 class="FailSearch" v-if="nbPagesTotal === 0">
+      Malheuresement aucun restaurant ne correspond à votre recherche
+    </h3>
+
     <br />
 
-    <v-simple-table class="liste">
+    <v-simple-table class="liste" v-if="nbPagesTotal > 0">
       <template v-slot:default>
         <thead>
           <tr>
@@ -165,44 +168,21 @@
 </template>
 
 <script>
-import _ from "lodash";
+//import _ from "lodash";
 export default {
   name: "ListeRestaurants",
-  props: {
-    msgs: String,
-  },
-
   data: () => ({
     dialog: false,
-    restaurants: [
-      {
-        nom: "café de Paris",
-        cuisine: "Française",
-      },
-      {
-        nom: "Sun City Café",
-        cuisine: "Américaine",
-      },
-    ],
-    form: {
-      name: "",
-      cuisine: "",
-      borough: "",
-      building: "",
-      lat: "",
-      zip: "",
-      grades: "",
-      long: "",
-      street: "",
-    },
+    restaurants: [],
+    name: "",
+    cuisine: "",
     nbRestaurantsTotal: 0,
     page: 0,
     pagesize: 10,
     nbPagesTotal: 0,
     msg: "",
+    recherche: "",
     nomRestaurantRecherche: "",
-    name: "",
-    email: "",
     valid: true,
     fieldRules: [(v) => !!v || "Champ requis"],
     select: null,
@@ -260,28 +240,27 @@ export default {
         });
     },
 
-    ajouterRestaurant() {
+    ajouterRestaurant(event) {
+      event.preventDefault();
       let dataFormulaire = new FormData();
-      dataFormulaire.append("name", this.form.name);
-      dataFormulaire.append("cuisine", this.form.cuisine);
-      let url = "http://localhost:8080/api/restaurants?";
-      console.log(this.form.name);
-      console.log(this.form.cuisine);
+      dataFormulaire.append("name", this.name);
+      dataFormulaire.append("cuisine", this.cuisine);
+      let url = "http://localhost:8080/api/restaurants";
+      console.log(this.name);
+      console.log(this.cuisine);
       console.log(dataFormulaire);
 
       fetch(url, {
         method: "POST",
         body: dataFormulaire,
-      })
-        .then((responseJSON) => {
-          responseJSON.json().then((resJS) => {
-            console.log(resJS.msg);
-            this.getRestaurantsFromServer();
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      }).then((response) => {
+        if (response.ok) {
+          console.log(response);
+          this.getRestaurantsFromServer();
+        } else {
+          console.log("err");
+        }
+      });
       this.nom = "";
       this.cuisine = "";
       this.dialog = false;
@@ -291,9 +270,10 @@ export default {
       return index % 2 ? "lightBlue" : "pink";
     },
 
-    chercherRestaurant: _.debounce(function () {
+    chercherRestaurant() {
+      this.nomRestaurantRecherche = this.recherche;
       this.getRestaurantsFromServer();
-    }, 20),
+    }
   },
 };
 </script>
@@ -341,5 +321,12 @@ export default {
 .details {
   color: rgb(31, 31, 31);
   text-decoration: none;
+}
+
+.FailSearch{
+  text-align: center;
+  font-family: "Roboto";
+  font-size: smaller;
+  color: rgb(100, 99, 99);
 }
 </style>
