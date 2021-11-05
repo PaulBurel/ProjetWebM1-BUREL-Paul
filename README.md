@@ -1,6 +1,6 @@
 # WikiResto
 
-Video
+- [Video de présentation du projet](https://youtu.be/0ozm2uVMVWk)
 
 
 ## Installation sur votre machine
